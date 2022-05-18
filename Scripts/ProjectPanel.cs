@@ -622,12 +622,13 @@ public class ProjectPanel : MonoBehaviour
             }
         }
 
+        selecting = false;
+        projectArea.gameObject.SetActive(true);
+
         // if we have selected at least 1 object
         if (selectedObjects.Count > 0)
         {
             hasSelected = true;
-            selecting = false;
-            projectArea.gameObject.SetActive(true);
 
             do
             {
