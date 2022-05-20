@@ -20,8 +20,8 @@ public class CameraZoomAndMoveFromTouch : MonoBehaviour
     [HideInInspector]
     public bool _doMove = false;
     bool zooming = false;
-    bool canPlace = false;
     bool lastTouching = false;
+    bool canPlace = false;
     [HideInInspector]
     public bool isMovingTiles = false;
 
@@ -55,16 +55,6 @@ public class CameraZoomAndMoveFromTouch : MonoBehaviour
             }
         }
 
-        // stop the camera movement if over a ui panel
-        if (Input.GetMouseButton(0))
-        {
-            if (_overObject)
-            {
-                lastTouching = false;
-                return;
-            }
-        }
-
         // get mouse position
         Vector3 _mouse = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, 0f);
 
@@ -76,10 +66,15 @@ public class CameraZoomAndMoveFromTouch : MonoBehaviour
             canPlace = true;
         }
 
-        // can't place tiles over ui panel
-        if(_overObject)
+        // stop the camera movement if over a ui panel
+        if (Input.GetMouseButton(0))
         {
-            canPlace = false;
+            if (_overObject)
+            {
+                lastTouching = false;
+                //return;
+                canPlace = false;
+            }
         }
 
         if (Input.GetMouseButton(0) && lastTouching == false)
@@ -118,7 +113,7 @@ public class CameraZoomAndMoveFromTouch : MonoBehaviour
             Vector3 direction = touchStart - _mouse;
 
             // move only after the threshold
-            if (direction.magnitude > moveBeforeMove && !wasSelecting && !isMovingTiles)
+            if (direction.magnitude > moveBeforeMove && !wasSelecting && !isMovingTiles && !_overObject)
             {
                 _doMove = true;
             }
@@ -151,9 +146,9 @@ public class CameraZoomAndMoveFromTouch : MonoBehaviour
         }
 
         // if we are able to place/remove a tile
-        if(Input.GetMouseButtonUp(0) && !zooming && !_doMove && !_overObject && canPlace)
+        if(Input.GetMouseButtonUp(0) && !zooming && !_doMove)
         {
-            if (ProjectPanel.instance.inPanel && !wasTeardropping && !wasSelecting && !isMovingTiles)
+            if (ProjectPanel.instance.inPanel && !wasTeardropping && !wasSelecting && !isMovingTiles && !_overObject && canPlace)
             {
                 Vector2 _spawn = GetComponent<Camera>().ScreenToWorldPoint(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
                 ProjectPanel.instance.MousePress(_spawn);

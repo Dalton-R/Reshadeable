@@ -60,6 +60,13 @@ public class ProjectPanel : MonoBehaviour
     [HideInInspector]
     public List<TileHolder> selectedObjects = new List<TileHolder>();
 
+    Coroutine selectRoutine = null;
+    Coroutine teardropRoutine = null;
+
+    List<Tile> revertedTiles = new List<Tile>();
+    List<Tile> currentTiles = new List<Tile>();
+    bool isReverted;
+
     private void Awake()
     {
         instance = this;
@@ -69,14 +76,107 @@ public class ProjectPanel : MonoBehaviour
     {
         // when we open the panel, set everything up
 
-        CreateCanvas();
+        CreateCanvas(true, MenuManager.instance.currentProject.Tiles);
 
         tileSettings = new Tile();
         SetTileSettingsVisuals();
         SetTileReshadeable(tileSettings.tileShadeable);
         SetAdd(true);
+        StopSelections();
+    }
+
+    private void Update()
+    {
+        // if we aren't editing a project, dont continue
+        if (!inPanel)
+            return;
+
+        // if left control is pressed
+        if(Input.GetKey(KeyCode.LeftControl))
+        {
+            // if we press "Z", undo
+            if(Input.GetKeyDown(KeyCode.Z) && !isReverted)
+            {
+                StopSelections();
+
+                // undo
+                isReverted = true;
+                CreateCanvas(false, revertedTiles);
+            }
+
+            // if we press "Y", redo
+            if(Input.GetKeyDown(KeyCode.Y) && isReverted)
+            {
+                StopSelections();
+
+                // redo
+                isReverted = false;
+                CreateCanvas(false, currentTiles);
+            }
+        }
+    }
+
+    List<Tile> GetTiles()
+    {
+        // get all of the tiles in the project area
+
+        List<Tile> retTiles = new List<Tile>();
+
+        foreach (Transform tr in tileContainer)
+        {
+            Tile _refTile = tr.GetComponent<TileHolder>().tile;
+            Tile _newTile = SetTileSettings(_refTile);
+            retTiles.Add(_newTile);
+        }
+
+        if(retTiles.Count > 0)
+        {
+            Debug.Log(retTiles[0].tilePosX);
+            Debug.Log(retTiles[0].tilePosY);
+        }
+
+        return retTiles;
+    }
+
+    public IEnumerator SetNextMemory(bool setOld)
+    {
+        yield return new WaitForSeconds(0.01f);
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForEndOfFrame();
+
+        // if we are in the current tiles, set the old tiles to current
+        if (!isReverted && setOld)
+        {
+            revertedTiles = currentTiles;
+        }
+
+        // set current tiles to what we see
+        currentTiles = GetTiles();
+
+        // we are now on the current tiles
+        isReverted = false;
+    }
+
+    public void StopSelections()
+    {
+        // stop the coroutines becuase tiles will not be there anymore
+
+        if(teardropRoutine != null)
+        {
+            StopCoroutine(teardropRoutine);
+        }
+        if(selectRoutine != null)
+        {
+            StopCoroutine(selectRoutine);
+        }
+
+        selecting = false;
+        ClearSelected();
         selectedObjects.Clear();
-        hasSelected = false;
+
+        teardropping = false;
+
+        projectArea.gameObject.SetActive(true);
     }
 
     public void ClearCanvas()
@@ -88,21 +188,31 @@ public class ProjectPanel : MonoBehaviour
         }
     }
 
-    public void CreateCanvas()
+    public void CreateCanvas(bool entering, List<Tile> _tiles)
     {
         ClearCanvas();
 
-        StartCoroutine(spawnTiles());
+        StartCoroutine(spawnTiles(entering, _tiles));
     }
 
-    IEnumerator spawnTiles()
+    IEnumerator spawnTiles(bool entering, List<Tile> _tiles)
     {
-        bgPanelAnimator.Play("BGCanvasDarkFadeIn");
+        inPanel = false;
+
+        if (entering)
+        {
+            foreach (GameObject gm in objectsToSetActiveWhenLoad)
+            {
+                gm.SetActive(false);
+            }
+
+            bgPanelAnimator.Play("BGCanvasDarkFadeIn");
+        }
 
         float _time = 0f;
 
         //spawn the tiles
-        foreach (Tile tile in MenuManager.instance.currentProject.Tiles)
+        foreach (Tile tile in _tiles)
         {
             TileHolder til = Instantiate(tilePrefab, new Vector2(tile.tilePosX, tile.tilePosY), Quaternion.identity, tileContainer).GetComponent<TileHolder>();
             til.tile = tile;
@@ -110,48 +220,57 @@ public class ProjectPanel : MonoBehaviour
             _time += 0.001f;
         }
 
-        // allow time for the loading canvas to fade in/out
-        float _maxTime = 1f;
-        if(_time < _maxTime)
+        if (entering)
         {
-            float _timeToWait = _maxTime - _time;
-            yield return new WaitForSeconds(_timeToWait);
+            // allow time for the loading canvas to fade in/out
+            float _maxTime = 1f;
+            if (_time < _maxTime)
+            {
+                float _timeToWait = _maxTime - _time;
+                yield return new WaitForSeconds(_timeToWait);
+            }
+
+            CanvasSlider.instance.SlideCanvasFromRight("ProjectArea");
+            mainPanel.Play("ProjectAreaFadeIn");
+            yield return new WaitForSeconds(0.1f);
+
+            foreach (GameObject gm in objectsToSetActiveWhenLoad)
+            {
+                gm.SetActive(true);
+            }
+
+            CenterCamera(false);
+
+            // if this, so it doesn't set to 0
+            if (MenuManager.instance.currentProject.Tiles.Count == 0)
+            {
+                mainCamera.orthographicSize = 35f;
+            }
+
+            SaveCameraSettings();
+
+            revertedTiles = GetTiles();
+            currentTiles = GetTiles();
+            isReverted = false;
         }
 
-        CanvasSlider.instance.SlideCanvasFromRight("ProjectArea");
-        mainPanel.Play("ProjectAreaFadeIn");
-        yield return new WaitForSeconds(0.1f);
-        foreach(GameObject gm in objectsToSetActiveWhenLoad)
-        {
-            gm.SetActive(true);
-        }
-
-        CenterCamera(false);
-
-        // if this, so it doesn't set to 0
-        if(MenuManager.instance.currentProject.Tiles.Count == 0)
-        {
-            mainCamera.orthographicSize = 35f;
-        }
-
-        SaveCameraSettings();
         inPanel = true;
     }
 
     public void MousePress(Vector2 pos)
     {
-        if (teardropping)
+        // end these instead of placing / removing
+        if (teardropping || selecting)
             return;
 
-        if (selecting)
-            return;
-
+        // if we have a selected, unselect it
         if(hasSelected)
         {
             ClearSelected();
             return;
         }
 
+        // if the image exporting window isn't open
         if (imageInfoAnimator.GetComponent<CanvasGroup>().alpha > 0.1f)
             return;
 
@@ -162,6 +281,9 @@ public class ProjectPanel : MonoBehaviour
             {
                 TileHolder til = Instantiate(tilePrefab, pos, Quaternion.identity, tileContainer).GetComponent<TileHolder>();
                 til.tile = SetTileSettings(tileSettings);
+
+                // save tiles for undo/redo
+                StartCoroutine(SetNextMemory(true));
             }
         }
         else
@@ -173,6 +295,9 @@ public class ProjectPanel : MonoBehaviour
                 if (hit.collider.CompareTag("Tile"))
                 {
                     Destroy(hit.transform.gameObject);
+
+                    // save tiles for undo/redo
+                    StartCoroutine(SetNextMemory(true));
                 }
             }
         }
@@ -209,11 +334,11 @@ public class ProjectPanel : MonoBehaviour
         }
         if (_name == "Teardrop")
         {
-            StartCoroutine(teardrop());
+            teardropRoutine = StartCoroutine(teardrop());
         }
         if(_name == "Select")
         {
-            StartCoroutine(select());
+            selectRoutine = StartCoroutine(select());
         }
         if(_name == "EditOpen")
         {
@@ -548,6 +673,9 @@ public class ProjectPanel : MonoBehaviour
     IEnumerator teardrop()
     {
         projectArea.gameObject.SetActive(false);
+
+        yield return new WaitUntil(() => !Input.GetMouseButton(0));
+
         teardropping = true;
         CameraZoomAndMoveFromTouch.instance.wasTeardropping = true;
 
@@ -573,6 +701,8 @@ public class ProjectPanel : MonoBehaviour
     {
         ClearSelected();
         selectedObjects.Clear();
+
+        yield return new WaitUntil(() => !Input.GetMouseButton(0));
 
         projectArea.gameObject.SetActive(false);
         selecting = true;
@@ -663,11 +793,16 @@ public class ProjectPanel : MonoBehaviour
                                 yield return new WaitForFixedUpdate();
                             } while (Input.GetMouseButton(0));
 
+                            revertedTiles = GetTiles();
+
                             // update the tile's settings, and remove underneath tiles
                             foreach (TileHolder til in selectedObjects)
                             {
                                 til.WaitForFrameUpdate();
                             }
+
+                            // save tiles for undo/redo
+                            StartCoroutine(SetNextMemory(false));
                         }
                     }
                 }
@@ -716,12 +851,7 @@ public class ProjectPanel : MonoBehaviour
             Project _saveProj = new Project();
             _saveProj.SaveName = MenuManager.instance.currentProject.SaveName;
 
-            foreach (Transform tr in tileContainer)
-            {
-                Tile _refTile = tr.GetComponent<TileHolder>().tile;
-                Tile _newTile = SetTileSettings(_refTile);
-                _saveProj.Tiles.Add(_newTile);
-            }
+            _saveProj.Tiles = GetTiles();
             SaveManager.instance.SaveProject(_saveProj);
         }
 
