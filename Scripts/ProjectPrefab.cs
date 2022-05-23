@@ -4,5 +4,6 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "New Project")]
 public class ProjectPrefab : ScriptableObject
 {
+    // project holder
     public Project project;
 }

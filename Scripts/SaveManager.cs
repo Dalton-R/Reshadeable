@@ -69,10 +69,6 @@ public class SaveManager : MonoBehaviour
             // spawn the project buttons list
             MenuManager.instance.SpawnProjects();
         }
-        catch
-        {
-            
-        }
     }
 
     public void GetSavedImages()
@@ -101,10 +97,6 @@ public class SaveManager : MonoBehaviour
                 }
             }
         }
-        catch
-        {
-            
-        }
     }
 
     public void SaveProject(Project _lng)
@@ -125,14 +117,11 @@ public class SaveManager : MonoBehaviour
             bf.Serialize(file, data);
             file.Close();
         }
-        catch
-        {
-            
-        }
     }
 
     public void DeleteProject(Project data)
     {
+        // delete the project file
         File.Delete(projectsSavePath + seperatorChar + data.SaveName + fileExtention);
         GetSavedProjects();
     }

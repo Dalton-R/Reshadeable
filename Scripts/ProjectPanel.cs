@@ -8,6 +8,7 @@ public class ProjectPanel : MonoBehaviour
 {
     public static ProjectPanel instance;
 
+    // if we are currently editing a project
     public bool inPanel;
 
     public Transform projectArea;
@@ -19,6 +20,7 @@ public class ProjectPanel : MonoBehaviour
     public Animator imageInfoAnimator;
     public List<GameObject> objectsToDisableForCapture = new List<GameObject>();
 
+    // tile stuff
     public GameObject tilePrefab;
     Tile tileSettings = new Tile();
     public Button opacityColorButton;
@@ -26,24 +28,27 @@ public class ProjectPanel : MonoBehaviour
     public GameObject reshadeYesButton;
     public GameObject reshadeNoButton;
 
+    // edit shadeable stuff
     public GameObject editShadeArea;
     public Slider editShadeSlider;
     public Slider editShadeAlphaSlider;
 
+    // edit non-shadeable stuff
     public GameObject editColorArea;
     public Slider editColorRSlider;
     public Slider editColorGSlider;
     public Slider editColorBSlider;
     public Slider editColorASlider;
 
+    // if we are doing a special action
     [HideInInspector]
     public bool teardropping = false;
-
     [HideInInspector]
     public bool selecting = false;
     [HideInInspector]
     public bool hasSelected = false;
 
+    // add/remove stuff
     bool _adding = true;
     public Button addButton;
     public Button deleteButton;
@@ -57,12 +62,15 @@ public class ProjectPanel : MonoBehaviour
     public GameObject singleImageInfoClose;
     public GameObject bothImageInfoClose;
 
+    // a list for the currently selected tiles
     [HideInInspector]
     public List<TileHolder> selectedObjects = new List<TileHolder>();
 
+    // routine variables for when we need to stop them
     Coroutine selectRoutine = null;
     Coroutine teardropRoutine = null;
 
+    // undo/redo stuff
     List<Tile> revertedTiles = new List<Tile>();
     List<Tile> currentTiles = new List<Tile>();
     bool isReverted;
@@ -140,6 +148,7 @@ public class ProjectPanel : MonoBehaviour
 
     public IEnumerator SetNextMemory(bool setOld)
     {
+        // wait for the tiles to snap to grid
         yield return new WaitForSeconds(0.01f);
         yield return new WaitForEndOfFrame();
         yield return new WaitForEndOfFrame();
@@ -316,6 +325,8 @@ public class ProjectPanel : MonoBehaviour
 
     public void ButtonClicked(string _name)
     {
+        // if we press one of these buttons
+
         if(_name == "Add")
         {
             SetAdd(true);
@@ -352,6 +363,7 @@ public class ProjectPanel : MonoBehaviour
         }
         if(_name == "Shade")
         {
+            // set the shadeable slider value to the average non-shadeables
             bool _active = editShadeArea.activeInHierarchy;
             if(!_active)
             {
@@ -366,6 +378,7 @@ public class ProjectPanel : MonoBehaviour
         }
         if(_name == "Color")
         {
+            // set the non-shadeable sliders to the shadeable color value
             bool _active = editColorArea.activeInHierarchy;
             if (!_active)
             {
@@ -589,12 +602,14 @@ public class ProjectPanel : MonoBehaviour
 
     public void SaveCameraSettings()
     {
+        // save the current camera settings
         camSize = mainCamera.orthographicSize;
         camPos = mainCamera.transform.position;
     }
 
     public void SetCameraToSettings()
     {
+        // set the camera to the saved settings
         mainCamera.orthographicSize = camSize;
         Vector3 _targetPos = new Vector3(camPos.x, camPos.y, mainCamera.transform.position.z);
         camTargetPos.position = _targetPos;
@@ -674,6 +689,7 @@ public class ProjectPanel : MonoBehaviour
     {
         projectArea.gameObject.SetActive(false);
 
+        // wait until we let go of the teardrop button
         yield return new WaitUntil(() => !Input.GetMouseButton(0));
 
         teardropping = true;
@@ -702,6 +718,7 @@ public class ProjectPanel : MonoBehaviour
         ClearSelected();
         selectedObjects.Clear();
 
+        // wait until we let go of the select button
         yield return new WaitUntil(() => !Input.GetMouseButton(0));
 
         projectArea.gameObject.SetActive(false);

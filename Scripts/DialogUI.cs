@@ -41,36 +41,48 @@ public class DialogUI : MonoBehaviour
 
     public DialogUI SetTitle(string title)
     {
+        // set the title of the dialog
+
         dialog.Title = title;
         return Instance;
     }
 
     public DialogUI SetMessage(string message)
     {
+        // set the title of the message
+
         dialog.Message = message;
         return Instance;
     }
 
     public DialogUI AcceptOnly(bool _bool)
     {
+        // if the dialog is only an acceptable, or an optional
+
         dialog.AcceptOnly = _bool;
         return Instance;
     }
 
     public DialogUI OnClose(UnityAction action)
     {
+        // callback for when we close the dialog
+
         dialog.OnClose = action;
         return Instance;
     }
 
     public DialogUI OnAccept(UnityAction action)
     {
+        // callback for if we accept the dialog
+
         dialog.OnAccepted = action;
         return Instance;
     }
 
     public void Show()
     {
+        // show the dialog with the settings
+
         titleUIText.text = dialog.Title;
         messageUIText.text = dialog.Message;
 
@@ -90,6 +102,8 @@ public class DialogUI : MonoBehaviour
 
     public void Hide()
     {
+        // hide the dialog
+
         canvas.SetActive(false);
 
         if (dialog.OnClose != null)

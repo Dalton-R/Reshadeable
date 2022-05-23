@@ -118,6 +118,7 @@ public class CameraZoomAndMoveFromTouch : MonoBehaviour
                 _doMove = true;
             }
 
+            // move the camera
             if (_doMove)
             {
                 direction *= cameraMoveModifier;
@@ -159,6 +160,7 @@ public class CameraZoomAndMoveFromTouch : MonoBehaviour
             isMovingTiles = false;
         }
 
+        // if we let go after zooming
         if (Input.touchCount == 0 && zooming)
         {
             zooming = false;

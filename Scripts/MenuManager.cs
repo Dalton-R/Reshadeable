@@ -26,6 +26,7 @@ public class MenuManager : MonoBehaviour
 
     public void NewCurrentProject()
     {
+        // get a new instance of a project
         currentProject = new Project();
     }
 
@@ -55,11 +56,13 @@ public class MenuManager : MonoBehaviour
 
     public void DeleteProject()
     {
+        // delete the project popup
         DialogUI.Instance.SetTitle("Are you sure?").SetMessage("Are you sure you want to delete this project?\nIt cannot be undone!").AcceptOnly(false).OnAccept(delegate { deleteCurrentProject(); }).Show();
     }
 
     void deleteCurrentProject()
     {
+        // delete the curreent project
         SaveManager.instance.DeleteProject(currentProject);
         currentProject = null;
         SpawnProjects();
@@ -154,6 +157,7 @@ public class MenuManager : MonoBehaviour
 
     public void QuitGame()
     {
+        // quit the game if dialog accepted
         DialogUI.Instance.SetTitle("Are you sure?").SetMessage("Are you sure you want to quit?").AcceptOnly(false).OnAccept(delegate { Application.Quit(); }).Show();
     }
 }

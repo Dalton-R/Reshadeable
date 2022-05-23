@@ -3,7 +3,9 @@ using UnityEngine.UI;
 
 public class ImageThroughHues : MonoBehaviour
 {
+    // image to change
     Image _image;
+    // colors to go through
     public Color[] colors;
 
     public int currentIndex = 0;

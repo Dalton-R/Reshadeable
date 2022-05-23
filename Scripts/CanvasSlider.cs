@@ -113,6 +113,8 @@ public class CanvasSlider : MonoBehaviour
 
     IEnumerator waitToSetActive(GameObject gm)
     {
+        // we wait to set the old canvas inactive, so it doesent immediantly dissapear
+
         gm.SetActive(true);
         currentCanvas = gm;
 
